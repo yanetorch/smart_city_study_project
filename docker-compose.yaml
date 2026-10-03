@@ -1,0 +1,37 @@
+services:
+  auth_service:
+    build: .
+    # ports:
+    #   - "8001:8000" # без nginx
+    env_file:
+      - config.env
+    environment:
+      # в конфиге @localhost, а для докера @db
+      - DATABASE_URL=postgresql+asyncpg://admin:123@db:5432/identifyandauth
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8088:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - auth_service
+
+  # БД
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: identifyandauth
+    volumes:
+      # чтобы данные не терялись при перезапуске контейнера
+      - postgres_data:/var/lib/postgresql/data
+    # ports:
+    #   - "5433:5432" # WSL
+
+volumes:
+  postgres_data:

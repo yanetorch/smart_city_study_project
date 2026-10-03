@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.database import AsyncSessionLocal, engine
-from app.models import ServiceApiKey
+from app.database import AsyncSessionLocal, Base, engine
+from app.models import ServiceApiKey, User
 from app.routers import auth, users
 from app.security import hash_api_key
 
@@ -25,6 +25,9 @@ async def seed_service_key(session: AsyncSession):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
     async with AsyncSessionLocal() as session:
         await seed_service_key(session)
 

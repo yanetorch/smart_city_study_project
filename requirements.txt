@@ -1,8 +1,8 @@
 fastapi
 uvicorn[standard]
 sqlalchemy
+sqlalchemy[asyncio]
 asyncpg
-alembic
 pyjwt
 bcrypt
 pydantic-settings
