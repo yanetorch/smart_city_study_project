@@ -1,10 +1,12 @@
 services:
   auth_service:
-    build: .
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
     # ports:
     #   - "8001:8000" # без nginx
     env_file:
-      - config.env
+      - ./services/auth-service/config.env
     environment:
       # в конфиге @localhost, а для докера @db
       - DATABASE_URL=postgresql+asyncpg://admin:123@db:5432/identifyandauth
