@@ -1,17 +1,85 @@
 services:
+  # 1. Identity & Auth
   auth_service:
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile
-    # ports:
-    #   - "8001:8000" # без nginx
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/api/auth"]
     env_file:
       - ./services/auth-service/config.env
     environment:
-      # в конфиге @localhost, а для докера @db
       - DATABASE_URL=postgresql+asyncpg://admin:123@db:5432/identifyandauth
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: identifyandauth
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d identifyandauth"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # 2. Transport
+  transport_service:
+    build:
+      context: ./services/transport-service
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://admin:123@transport_db:5432/transport
+      - AUTH_SERVICE_URL=http://auth_service:8000
+      # - NOTIFICATION_SERVICE_URL=http://notification_service:8000  # раскомментировать
+      - ROOT_PATH=/api/transport
+    depends_on:
+      transport_db:
+        condition: service_healthy
+
+  transport_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: transport
+    volumes:
+      - transport_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d transport"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # 3. Utility 
+  utility_service:
+    build:
+      context: ./services/utility-service
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://admin:123@utility_db:5432/utility
+      - AUTH_SERVICE_URL=http://auth_service:8000
+      # - NOTIFICATION_SERVICE_URL=http://notification_service:8000  # раскомментировать
+      - ROOT_PATH=/api/utility
+    depends_on:
+      utility_db:
+        condition: service_healthy
+
+  utility_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: utility
+    volumes:
+      - utility_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d utility"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
 
   nginx:
     image: nginx:alpine
@@ -21,19 +89,10 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - auth_service
-
-  # БД
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: identifyandauth
-    volumes:
-      # чтобы данные не терялись при перезапуске контейнера
-      - postgres_data:/var/lib/postgresql/data
-    # ports:
-    #   - "5433:5432" # WSL
+      - transport_service
+      - utility_service
 
 volumes:
   postgres_data:
+  transport_data:
+  utility_data:
