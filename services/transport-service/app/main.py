@@ -15,7 +15,7 @@ logging.basicConfig(
     format=f"%(asctime)s [{settings.SERVICE_NAME}] %(levelname)s %(message)s",
 )
 log = logging.getLogger(settings.SERVICE_NAME)
-logging.getLogger("httpx").setLevel(logging.WARNING)  
+logging.getLogger("httpx").setLevel(logging.WARNING)  # не спамить каждым запросом в auth
 
 
 @asynccontextmanager

@@ -28,6 +28,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db(retries: int = 10, delay: float = 2.0) -> None:
+    """Создаёт таблицы. Postgres может стартовать дольше сервиса — поэтому ретраи."""
     for attempt in range(1, retries + 1):
         try:
             async with engine.begin() as conn:

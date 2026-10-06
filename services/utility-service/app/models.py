@@ -7,11 +7,12 @@ from app.database import Base
 
 
 class Issue(Base):
-    #Заявка ЖКХ от жителя
+    """Заявка ЖКХ от жителя."""
 
     __tablename__ = "issues"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # id автора из Identity & Auth Service. Внешнего ключа нет — это другая БД.
     user_id: Mapped[int] = mapped_column(Integer, index=True)
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
@@ -31,7 +32,7 @@ class Issue(Base):
 
 
 class IssueStatusHistory(Base):
-    #История смены статусов заявки — кто, когда и с каким комментарием
+    """История смены статусов заявки — кто, когда и с каким комментарием."""
 
     __tablename__ = "issue_status_history"
 

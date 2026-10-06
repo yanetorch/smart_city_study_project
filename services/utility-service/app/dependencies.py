@@ -20,6 +20,11 @@ class CurrentUser(BaseModel):
 async def get_current_user(
     creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> CurrentUser:
+    """Проверяем токен через Identity & Auth Service (GET /users/me).
+
+    В токене auth-сервиса в `sub` лежит username, а нам нужен id пользователя,
+    поэтому просто спрашиваем профиль у auth-сервиса по HTTP.
+    """
     if creds is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
