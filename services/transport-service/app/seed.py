@@ -1,3 +1,4 @@
+"""Тестовые данные, чтобы на демонстрации списки не были пустыми (координаты — Иркутск)."""
 import logging
 from decimal import Decimal
 
@@ -10,6 +11,7 @@ from app.models import Parking, Vehicle
 log = logging.getLogger(settings.SERVICE_NAME)
 
 VEHICLES = [
+    # type, route, plate, lat, lon, status
     ("bus", "20", "А101АА38", 52.2869, 104.2810, "active"),
     ("bus", "20", "А102АА38", 52.2721, 104.2965, "active"),
     ("bus", "42", "В201ВВ38", 52.2600, 104.3200, "active"),
@@ -21,6 +23,7 @@ VEHICLES = [
 ]
 
 PARKINGS = [
+    # name, address, lat, lon, spots, price
     ("Парковка у Центрального рынка", "ул. Чкалова, 1", 52.2836, 104.2970, 40, Decimal("60.00")),
     ("Парковка на Карла Маркса", "ул. Карла Маркса, 15", 52.2858, 104.2846, 20, Decimal("80.00")),
     ("Парковка у ИГУ", "ул. Карла Маркса, 1", 52.2805, 104.2795, 15, Decimal("50.00")),

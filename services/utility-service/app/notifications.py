@@ -8,6 +8,11 @@ log = logging.getLogger(settings.SERVICE_NAME)
 
 
 async def send_notification(user_id: int, title: str, message: str) -> None:
+    """Отправка уведомления в Notification Service.
+
+    Уведомление — не критичная операция: если сервис уведомлений
+    недоступен, основная операция всё равно считается успешной.
+    """
     if not settings.NOTIFICATION_SERVICE_URL:
         log.info("Notification skipped (NOTIFICATION_SERVICE_URL not set): user=%s '%s'", user_id, title)
         return

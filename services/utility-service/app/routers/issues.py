@@ -51,7 +51,7 @@ async def create_issue(
     user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Создание заявки ЖКХ"""
+    """Создание заявки ЖКХ (нужен JWT)."""
     issue = Issue(
         user_id=user.id,
         title=data.title,
@@ -77,7 +77,7 @@ async def list_issues(
     user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Список заявок. Фильтры: статус, категория"""
+    """Список заявок. Фильтры: статус, категория, mine=true — только свои."""
     stmt = select(Issue).order_by(Issue.created_at.desc())
     if status is not None:
         stmt = stmt.where(Issue.status == status.value)
@@ -107,7 +107,7 @@ async def update_issue_status(
     user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    #Обновление статуса заявки
+    """Обновление статуса заявки (нужен JWT)."""
     issue = await _get_issue_or_404(db, issue_id)
     old_status = issue.status
     new_status = data.status.value

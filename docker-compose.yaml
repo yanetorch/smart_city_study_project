@@ -1,18 +1,23 @@
 services:
-  # 1. Identity & Auth
+  # ---------- 1. Identity & Auth ----------
   auth_service:
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile
+    # --root-path нужен, чтобы Swagger работал за nginx по адресу /api/auth/docs
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/api/auth"]
+    # ports:
+    #   - "8001:8000" # без nginx
     env_file:
       - ./services/auth-service/config.env
     environment:
+      # в конфиге @localhost, а для докера @db
       - DATABASE_URL=postgresql+asyncpg://admin:123@db:5432/identifyandauth
     depends_on:
       db:
         condition: service_healthy
 
+  # БД auth-сервиса
   db:
     image: postgres:16-alpine
     environment:
@@ -20,21 +25,26 @@ services:
       POSTGRES_PASSWORD: 123
       POSTGRES_DB: identifyandauth
     volumes:
+      # чтобы данные не терялись при перезапуске контейнера
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d identifyandauth"]
       interval: 3s
       timeout: 3s
       retries: 20
+    # ports:
+    #   - "5433:5432" # WSL
 
-  # 2. Transport
+  # ---------- 2. Transport ----------
   transport_service:
     build:
       context: ./services/transport-service
+    # ports:
+    #   - "8002:8000" # без nginx
     environment:
       - DATABASE_URL=postgresql+asyncpg://admin:123@transport_db:5432/transport
       - AUTH_SERVICE_URL=http://auth_service:8000
-      # - NOTIFICATION_SERVICE_URL=http://notification_service:8000  # раскомментировать
+      - NOTIFICATION_SERVICE_URL=http://notification_service:8000  # раскомментировать, когда будет готов
       - ROOT_PATH=/api/transport
     depends_on:
       transport_db:
@@ -54,14 +64,16 @@ services:
       timeout: 3s
       retries: 20
 
-  # 3. Utility 
+  # ---------- 3. Utility (ЖКХ) ----------
   utility_service:
     build:
       context: ./services/utility-service
+    # ports:
+    #   - "8003:8000" # без nginx
     environment:
       - DATABASE_URL=postgresql+asyncpg://admin:123@utility_db:5432/utility
       - AUTH_SERVICE_URL=http://auth_service:8000
-      # - NOTIFICATION_SERVICE_URL=http://notification_service:8000  # раскомментировать
+      - NOTIFICATION_SERVICE_URL=http://notification_service:8000  # раскомментировать, когда будет готов
       - ROOT_PATH=/api/utility
     depends_on:
       utility_db:
@@ -80,7 +92,22 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+  
 
+# ---------- 4. Notification ----------
+  notification_service:
+    build:
+      context: ./services/notification-service
+    environment:
+      SERVICE_NAME: notification-service
+      DRY_RUN: "true"
+      AUTH_SERVICE_URL: http://auth_service:8000
+      SERVICE_API_KEY: change-me                # ← ДОБАВИТЬ
+    depends_on:
+      - auth_service
+    restart: unless-stopped
+
+  # ---------- Gateway ----------
   nginx:
     image: nginx:alpine
     ports:

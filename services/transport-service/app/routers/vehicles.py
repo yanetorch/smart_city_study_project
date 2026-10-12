@@ -16,7 +16,7 @@ async def list_vehicles(
     status: VehicleStatus | None = None,
     db: AsyncSession = Depends(get_db),
 ):
-    #Список транспорта
+    """Список транспорта с координатами. Можно фильтровать по типу, маршруту и статусу."""
     stmt = select(Vehicle).order_by(Vehicle.id)
     if type is not None:
         stmt = stmt.where(Vehicle.vehicle_type == type.value)

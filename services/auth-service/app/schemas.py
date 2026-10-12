@@ -21,6 +21,7 @@ class UserPublic(BaseModel):
 
     id: int
     username: str
+    email: str | None = None
     created_at: datetime
 
 
