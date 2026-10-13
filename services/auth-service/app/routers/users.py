@@ -14,7 +14,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 @router.get("/{user_id}", response_model=UserPublic)
-async def get_user(user_id: int, db: AsyncSession = Depends(get_db), _: ServiceApiKey = Depends(verify_service_key)):
+async def get_user(user_id: int, db: AsyncSession = Depends(get_db),_: User = Depends(get_current_user)):
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
 
