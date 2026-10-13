@@ -1,0 +1,43 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #222;
+  background: #f7f7f8;
+}
+.container { max-width: 960px; margin: 0 auto; padding: 1rem; }
+nav {
+  background: #2c3e50;
+  color: #fff;
+  padding: 0.75rem 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+nav a { color: #fff; text-decoration: none; }
+nav a.router-link-active { text-decoration: underline; }
+nav .spacer { flex: 1; }
+button {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+button.primary { background: #2c3e50; color: #fff; border-color: #2c3e50; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+input, textarea, select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  font: inherit;
+}
+form .field { margin-bottom: 0.75rem; }
+form label { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
+table { width: 100%; border-collapse: collapse; background: #fff; }
+th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; text-align: left; }
+th { background: #f0f0f2; }
+.error { color: #c0392b; margin: 0.5rem 0; }
+.card { background: #fff; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; }

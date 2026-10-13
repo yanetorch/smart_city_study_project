@@ -8,7 +8,8 @@ from app.models import User
 from app.schemas import LoginRequest, Token, UserCreate, UserPrivate
 from app.security import create_token, hash_password, verify_password
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+# убрал префикс /auth, так как конфилктует с фронт
+router = APIRouter(tags=["auth"])
 
 @router.post("/register", response_model=UserPrivate, status_code=status.HTTP_201_CREATED)
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):

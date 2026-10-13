@@ -4,21 +4,27 @@ services:
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile
-    # --root-path нужен, чтобы Swagger работал за nginx по адресу /api/auth/docs
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/api/auth"]
+    # --root-path /api/auth ставить только для работы со Swaggerпо адресу /api/auth/docs
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
     # ports:
     #   - "8001:8000" # без nginx
     env_file:
       - ./services/auth-service/config.env
     environment:
-      # в конфиге @localhost, а для докера @db
-      - DATABASE_URL=postgresql+asyncpg://admin:123@db:5432/identifyandauth
+      # в конфиге @localhost, а для докера @auth_db
+      - DATABASE_URL=postgresql+asyncpg://admin:123@auth_db:5432/identifyandauth
     depends_on:
-      db:
+      auth_db:
         condition: service_healthy
 
   # БД auth-сервиса
-  db:
+  auth_db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: admin
@@ -26,7 +32,7 @@ services:
       POSTGRES_DB: identifyandauth
     volumes:
       # чтобы данные не терялись при перезапуске контейнера
-      - postgres_data:/var/lib/postgresql/data
+      - auth_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d identifyandauth"]
       interval: 3s
@@ -44,7 +50,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://admin:123@transport_db:5432/transport
       - AUTH_SERVICE_URL=http://auth_service:8000
-      - NOTIFICATION_SERVICE_URL=http://notification_service:8000  # раскомментировать, когда будет готов
+      - NOTIFICATION_SERVICE_URL=http://notification_service:8000
       - ROOT_PATH=/api/transport
     depends_on:
       transport_db:
@@ -73,7 +79,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://admin:123@utility_db:5432/utility
       - AUTH_SERVICE_URL=http://auth_service:8000
-      - NOTIFICATION_SERVICE_URL=http://notification_service:8000  # раскомментировать, когда будет готов
+      - NOTIFICATION_SERVICE_URL=http://notification_service:8000
       - ROOT_PATH=/api/utility
     depends_on:
       utility_db:
@@ -102,12 +108,19 @@ services:
       SERVICE_NAME: notification-service
       DRY_RUN: "true"
       AUTH_SERVICE_URL: http://auth_service:8000
-      SERVICE_API_KEY: change-me                # ← ДОБАВИТЬ
+      SERVICE_API_KEY: 9unjXDAUDVI9uPp6GVyEGGmE2eLFo_6VdKVesoi3TWih6jfkPLN3Z9d73OAZnhU7
     depends_on:
       - auth_service
     restart: unless-stopped
 
-  # ---------- Gateway ----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    volumes:
+      - frontend_dist:/usr/share/nginx/html
+
   nginx:
     image: nginx:alpine
     ports:
@@ -118,8 +131,10 @@ services:
       - auth_service
       - transport_service
       - utility_service
+      - frontend
 
 volumes:
-  postgres_data:
+  auth_data:
   transport_data:
   utility_data:
+  frontend_dist:
