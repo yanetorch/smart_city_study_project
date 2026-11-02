@@ -113,6 +113,61 @@ services:
       - auth_service
     restart: unless-stopped
 
+
+# ---------- 5. Environment ----------
+  environment_service:
+    build:
+      context: ./services/environment-service
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://admin:123@environment_db:5432/environment
+      - SECRET_KEY=change-me
+      - SERVICE_NAME=environment-service
+    depends_on:
+      environment_db:
+        condition: service_healthy
+
+  environment_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: environment
+    volumes:
+      - environment_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d environment"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+# ---------- 6. Billing ----------
+  billing_service:
+    build:
+      context: ./services/billing-service
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://admin:123@billing_db:5432/billing
+      - SECRET_KEY=change-me
+      - SERVICE_NAME=billing-service
+      - SERVICE_API_KEY=change-me
+    depends_on:
+      billing_db:
+        condition: service_healthy
+
+  billing_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: billing
+    volumes:
+      - billing_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d billing"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+
   frontend:
     build:
       context: ./frontend
@@ -138,3 +193,5 @@ volumes:
   transport_data:
   utility_data:
   frontend_dist:
+  environment_data:
+  billing_data:
