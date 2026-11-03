@@ -10,6 +10,7 @@ const routes = [
   { path: '/vehicles', component: () => import('./views/VehiclesView.vue') },
   { path: '/parking', component: () => import('./views/ParkingView.vue') },
   { path: '/issues', component: () => import('./views/IssuesView.vue') },
+  { path: '/billing', component: () => import('./views/BillingView.vue')},
 ]
 
 const router = createRouter({

@@ -15,6 +15,7 @@ function logout() {
     <router-link to="/vehicles">Транспорт</router-link>
     <router-link to="/parking">Парковки</router-link>
     <router-link to="/issues">ЖКХ</router-link>
+    <router-link to="/billing">Счета и платежи</router-link>
     <span class="spacer"></span>
     <template v-if="auth.isAuthenticated">
       <router-link to="/profile">Профиль</router-link>
