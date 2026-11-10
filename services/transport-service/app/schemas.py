@@ -37,15 +37,15 @@ class ParkingOut(BaseModel):
     latitude: float
     longitude: float
     total_spots: int
-    free_spots: int  # свободно прямо сейчас
+    free_spots: int  
     price_per_hour: Decimal
 
 
 class ReservationCreate(BaseModel):
     car_number: str = Field(min_length=1, max_length=20, examples=["А123ВС38"])
-    # если не указано — бронь с текущего момента
     start_time: datetime | None = Field(default=None, description="Начало брони (ISO 8601). По умолчанию — сейчас")
-    hours: int = Field(ge=1, le=24, description="Длительность в часах")
+    hours: int | None = Field(default=None, ge=1, le=24, description="Длительность в часах (или укажите end_time)")
+    end_time: datetime | None = Field(default=None, description="Окончание брони (ISO 8601), вместо hours")
 
 
 class ReservationOut(BaseModel):

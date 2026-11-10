@@ -1,5 +1,5 @@
 import logging
-from app.notifications import send_notification
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +8,7 @@ from app.config import settings
 from app.database import get_db
 from app.dependencies import CurrentUser, get_current_user
 from app.models import ParkingReservation
+from app.notifications import send_notification
 from app.schemas import ReservationOut
 
 log = logging.getLogger(settings.SERVICE_NAME)
@@ -17,7 +18,7 @@ router = APIRouter(prefix="/reservations", tags=["reservations"])
 
 @router.get("/my", response_model=list[ReservationOut])
 async def my_reservations(user: CurrentUser = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    """Брони текущего пользователя."""
+    #Брони текущего пользователя
     result = await db.execute(
         select(ParkingReservation)
         .where(ParkingReservation.user_id == user.id)
@@ -32,7 +33,7 @@ async def cancel_reservation(
     user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Отмена своей брони — место снова становится свободным."""
+    #Отмена своей брони
     reservation = await db.get(ParkingReservation, reservation_id)
     if reservation is None:
         raise HTTPException(404, "Reservation not found")
@@ -45,11 +46,9 @@ async def cancel_reservation(
     await db.commit()
     await db.refresh(reservation)
     log.info("Reservation %s cancelled by user %s", reservation_id, user.id)
-    #  Уведомление об отмене
     await send_notification(
         user.id,
         "Бронирование отменено",
-        f"Бронь №{reservation.id} на парковке отменена. "
-        f"Место освобождено.",
+        f"Бронь №{reservation.id} на парковке отменена. Место освобождено.",
     )
     return reservation

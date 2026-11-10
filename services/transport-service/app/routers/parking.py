@@ -1,4 +1,5 @@
 import logging
+import math
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,9 +17,17 @@ log = logging.getLogger(settings.SERVICE_NAME)
 
 router = APIRouter(prefix="/parking", tags=["parking"])
 
+MAX_HOURS = 24
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
 
 def _busy_now_subquery():
-    """Сколько мест на каждой парковке занято бронями прямо сейчас."""
+    #Сколько мест на каждой парковке занято бронями прямо сейчас
     now = func.now()
     return (
         select(ParkingReservation.parking_id, func.count().label("busy"))
@@ -47,7 +56,7 @@ def _to_out(parking: Parking, busy: int) -> ParkingOut:
 
 @router.get("", response_model=list[ParkingOut])
 async def list_parkings(db: AsyncSession = Depends(get_db)):
-    """Информация о парковках, включая количество свободных мест."""
+    #Информация о парковках
     busy = _busy_now_subquery()
     stmt = (
         select(Parking, func.coalesce(busy.c.busy, 0))
@@ -79,17 +88,25 @@ async def reserve_spot(
     user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Бронирование парковочного места (нужен JWT)."""
+    #Бронирование парковочного места
     now = datetime.now(timezone.utc)
-    start = data.start_time or now
-    if start.tzinfo is None:  # время без часового пояса считаем UTC
-        start = start.replace(tzinfo=timezone.utc)
+    start = _as_utc(data.start_time or now)
     if start < now - timedelta(minutes=5):
         raise HTTPException(400, "Start time is in the past")
-    end = start + timedelta(hours=data.hours)
 
-    # SELECT ... FOR UPDATE: блокируем строку парковки, чтобы два параллельных
-    # запроса не заняли последнее место одновременно
+    if (data.hours is None) == (data.end_time is None):
+        raise HTTPException(400, "Specify either hours or end_time")
+    if data.end_time is not None:
+        end = _as_utc(data.end_time)
+        if end <= start:
+            raise HTTPException(400, "End time must be after start time")
+        if end - start > timedelta(hours=MAX_HOURS):
+            raise HTTPException(400, f"Reservation cannot be longer than {MAX_HOURS} hours")
+        hours = math.ceil((end - start).total_seconds() / 3600)
+    else:
+        hours = data.hours
+        end = start + timedelta(hours=hours)
+
     parking = await db.get(Parking, parking_id, with_for_update=True)
     if parking is None:
         raise HTTPException(404, "Parking not found")
@@ -114,7 +131,7 @@ async def reserve_spot(
         car_number=data.car_number.upper(),
         start_time=start,
         end_time=end,
-        total_price=parking.price_per_hour * data.hours,
+        total_price=parking.price_per_hour * hours,
         status="active",
     )
     db.add(reservation)

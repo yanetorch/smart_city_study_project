@@ -8,17 +8,17 @@ from app.database import Base
 
 
 class Vehicle(Base):
-    """Единица общественного транспорта с текущими координатами."""
+    #Штука общественного транспорта с текущими координатами
 
     __tablename__ = "vehicles"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    vehicle_type: Mapped[str] = mapped_column(String(20), index=True)  # bus / tram / trolleybus
+    vehicle_type: Mapped[str] = mapped_column(String(20), index=True)  
     route_number: Mapped[str] = mapped_column(String(10))
     plate_number: Mapped[str] = mapped_column(String(20), unique=True)
     latitude: Mapped[float] = mapped_column(Float)
     longitude: Mapped[float] = mapped_column(Float)
-    status: Mapped[str] = mapped_column(String(20), default="active")  # active / in_depot / maintenance
+    status: Mapped[str] = mapped_column(String(20), default="active")  
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
