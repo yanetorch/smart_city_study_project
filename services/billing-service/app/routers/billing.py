@@ -1,74 +1,74 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from ..database import get_db
 from ..models import Invoice, Payment, InvoiceStatus
-from ..auth import get_current_user, verify_internal_api_key
-from pydantic import BaseModel
+from ..schemas import InvoiceOut, PaymentCreate, PaymentOut
+from app.dependencies import CurrentUser, get_current_user
 
 router = APIRouter()
 
-
-class PaymentCreate(BaseModel):
-    invoice_id: int
-    amount: float
-
-
-@router.get("/accounts/{username}/invoices")
+@router.get("/accounts/{user_id}/invoices", response_model=list[InvoiceOut])
 async def get_invoices(
-        username: str,
-        db: AsyncSession = Depends(get_db),
-        current_user: dict = Depends(get_current_user)
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
-    # 1. Проверка прав: пользователь может смотреть только свои счета
-    if current_user["username"] != username:
-        raise HTTPException(status_code=403, detail="Доступ к чужим счетам запрещен")
+    # Пользователь может смотреть только свои счета
+    if current_user.id != user_id:
+        raise HTTPException(403, "Доступ к чужим счетам запрещен")
 
-    # 2. Ищем счета по username (исправленная переменная!)
-    result = await db.execute(select(Invoice).where(Invoice.user_id == username))
+    result = await db.execute(
+        select(Invoice).where(Invoice.user_id == user_id).order_by(Invoice.id)
+    )
     return result.scalars().all()
 
 
-@router.post("/payments", status_code=201)
+@router.post("/payments", response_model=PaymentOut, status_code=status.HTTP_201_CREATED)
 async def create_payment(
-        payment: PaymentCreate,
-        db: AsyncSession = Depends(get_db),
-        current_user: dict = Depends(get_current_user)
+    payment: PaymentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
-    # 1. Ищем счет по ID
-    result = await db.execute(select(Invoice).where(Invoice.id == payment.invoice_id))
+    result = await db.execute(
+        select(Invoice).where(Invoice.id == payment.invoice_id).with_for_update()
+    )
     invoice = result.scalar_one_or_none()
 
     if not invoice:
-        raise HTTPException(status_code=404, detail="Счет не найден")
+        raise HTTPException(404, "Счет не найден")
 
-    # 2. Проверка: нельзя оплатить чужой счет (сравниваем username)
-    if invoice.user_id != current_user["username"]:
-        raise HTTPException(status_code=403, detail="Нельзя оплатить чужой счет")
+    if invoice.user_id != current_user.id:
+        raise HTTPException(403, "Нельзя оплатить чужой счет")
 
-    if invoice.status == InvoiceStatus.PAID:
-        raise HTTPException(status_code=400, detail="Счет уже оплачен")
+    if invoice.status == InvoiceStatus.PAID.value:
+        raise HTTPException(400, "Счет уже оплачен")
 
-    # 3. Создаем платеж и обновляем статус счета
-    new_payment = Payment(invoice_id=payment.invoice_id, amount=payment.amount)
-    invoice.status = InvoiceStatus.PAID
+    # Проверка суммы: нельзя оплатить меньше, чем выставлено
+    if abs(payment.amount - invoice.amount) > 0.01:
+        raise HTTPException(400, "Сумма платежа не совпадает со счетом")
+
+    new_payment = Payment(
+        invoice_id=invoice.id,
+        user_id=current_user.id,
+        amount=payment.amount,
+        status="success",
+    )
+    invoice.status = InvoiceStatus.PAID.value
 
     db.add(new_payment)
     await db.commit()
-    return {"message": "Платеж успешно проведен", "payment_id": new_payment.id}
+    await db.refresh(new_payment)
+    return new_payment
 
-
+# по сути, заглушка (по-хорошему должна быть какая-нибудь проверка подписи)
 @router.post("/payments/webhook/success")
-async def payment_webhook(
-        invoice_id: int,
-        db: AsyncSession = Depends(get_db),
-        is_internal: bool = Depends(verify_internal_api_key)
-):
+async def payment_webhook(invoice_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Invoice).where(Invoice.id == invoice_id))
     invoice = result.scalar_one_or_none()
     if not invoice:
-        raise HTTPException(status_code=404, detail="Счет не найден")
-
-    invoice.status = InvoiceStatus.PAID
+        raise HTTPException(404, "Счет не найден")
+    invoice.status = InvoiceStatus.PAID.value
     await db.commit()
     return {"message": "Статус счета обновлен через webhook"}

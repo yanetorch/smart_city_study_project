@@ -2,7 +2,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     DATABASE_URL: str | None = None
-    SECRET_KEY: str
     SERVICE_NAME: str
     SERVICE_API_KEY: str
     AUTH_SERVICE_URL: str

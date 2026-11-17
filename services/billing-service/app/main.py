@@ -8,15 +8,12 @@ from app.service_registration import register_self
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await register_self()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
     async with AsyncSessionLocal() as session:
         await seed(session)
-
+    await register_self()
     yield
-
     await engine.dispose()
 
 

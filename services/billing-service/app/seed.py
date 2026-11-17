@@ -1,4 +1,4 @@
-"""Тестовые данные для Billing Service (счета для тестовых пользователей)."""
+"""Тестовые данные для Billing Service."""
 import logging
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,17 +7,16 @@ from app.models import Invoice, InvoiceStatus
 
 log = logging.getLogger(settings.SERVICE_NAME)
 
-# Тестовые счета (user_id здесь - это username, как мы договорились ранее)
+# user_id — это id пользователя из auth-service (целое число)
 INVOICES = [
-    # username, amount, status
-    ("testuser", 1500.00, InvoiceStatus.PENDING),
-    ("testuser", 3200.50, InvoiceStatus.PAID),
-    ("admin", 5000.00, InvoiceStatus.PENDING),
-    ("testuser", 450.00, InvoiceStatus.PENDING),
+    # user_id, amount, status
+    (1, 1500.00, InvoiceStatus.PENDING.value),
+    (1, 3200.50, InvoiceStatus.PAID.value),
+    (2, 5000.00, InvoiceStatus.PENDING.value),
+    (1, 450.00, InvoiceStatus.PENDING.value),
 ]
 
 async def seed(session: AsyncSession) -> None:
-    # Проверяем, пуста ли таблица счетов
     if await session.scalar(select(func.count()).select_from(Invoice)) == 0:
         invoices_to_add = [
             Invoice(user_id=user_id, amount=amount, status=status)
