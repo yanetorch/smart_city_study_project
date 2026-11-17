@@ -3,26 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from ..database import get_db
 from ..models import Sensor, SensorData
-from ..auth import get_current_user
-from pydantic import BaseModel
+from app.dependencies import get_current_user
+from app.schemas import *
 from datetime import datetime
 
 router = APIRouter(prefix="/sensors", tags=["sensors"])
-
-class SensorDataCreate(BaseModel):
-    sensor_id: int
-    value: float
-
-class SensorCreate(BaseModel):
-    name: str
-    location: str
-    sensor_type: str = "temperature"
-
-class SensorOut(BaseModel):
-    sensod_id: int
-    name: str
-    location: str
-    sensor_type: str
 
 @router.get("", response_model=list[SensorOut])
 async def get_sensors(db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):

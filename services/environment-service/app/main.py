@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from .database import engine, Base, AsyncSessionLocal
 from .routers import environment
 from .seed import seed
-from .service_registration import register_self
+from app.service_registration import register_self
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
