@@ -1,9 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
-from sqlalchemy.orm import declarative_base
 from .database import Base
 from datetime import datetime
-
-# Base = declarative_base()
 
 class Sensor(Base):
     __tablename__ = "sensors"

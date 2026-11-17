@@ -29,3 +29,11 @@ async def list_users(db: AsyncSession = Depends(get_db), _: ServiceApiKey = Depe
     users = result.scalars().all()
 
     return users
+
+@router.get("/internal/{user_id}", response_model=UserPrivate)
+async def get_user_internal(user_id: int, db: AsyncSession = Depends(get_db), _: ServiceApiKey = Depends(verify_service_key)):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(404, "User not found")
+    return user

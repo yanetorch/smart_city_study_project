@@ -1,17 +1,13 @@
-from pydantic_settings import BaseSettings
-
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    DATABASE_URL: str
-    SECRET_KEY: str  # Должен совпадать с тем, что в auth_service!
-    ALGORITHM: str = "HS256"
+    DATABASE_URL: str | None = None
     SERVICE_NAME: str
+    SERVICE_API_KEY: str
+    AUTH_SERVICE_URL: str
 
-    # Для Billing сервиса добавим ключ для внутренних запросов (webhook)
-    SERVICE_API_KEY: str = ""
+    SERVICE_REGISTRATION_TOKEN: str = ""
 
-    class Config:
-        env_file = "config.env"
-
+    model_config = SettingsConfigDict(env_file="config.env", extra="ignore")
 
 settings = Settings()

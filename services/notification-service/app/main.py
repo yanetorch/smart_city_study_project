@@ -7,6 +7,7 @@ from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, status
 from app.config import settings
 from app.notifications import process_notification
 from app.schemas import NotificationRequest, NotificationResponse
+from app.service_registration import register_self
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,6 +18,7 @@ logger = logging.getLogger(settings.SERVICE_NAME)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await register_self()
     if settings.INTERNAL_API_KEY:
         logger.info("Starting %s (auth: ENABLED, dry_run=%s)",
                     settings.SERVICE_NAME, settings.DRY_RUN)

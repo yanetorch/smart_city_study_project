@@ -101,7 +101,7 @@ async def resolve_contact(user_id: int, channel: str) -> str | None:
     try:
         async with httpx.AsyncClient(timeout=settings.AUTH_TIMEOUT_SECONDS) as client:
             resp = await client.get(
-                f"{settings.AUTH_SERVICE_URL}/users/{user_id}",
+                f"{settings.AUTH_SERVICE_URL}/users/internal/{user_id}",
                 headers={"X-API-Key": settings.SERVICE_API_KEY},
             )
             resp.raise_for_status()

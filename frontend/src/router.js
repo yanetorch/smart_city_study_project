@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { auth } from './store'
 
 const routes = [
-  { path: '/', redirect: '/vehicles' },
+  { path: '/', redirect: '/profile' },
   { path: '/login', component: () => import('./views/LoginView.vue'), meta: { public: true } },
   { path: '/register', component: () => import('./views/RegisterView.vue'), meta: { public: true } },
   { path: '/profile', component: () => import('./views/ProfileView.vue') },
@@ -10,7 +10,8 @@ const routes = [
   { path: '/vehicles', component: () => import('./views/VehiclesView.vue') },
   { path: '/parking', component: () => import('./views/ParkingView.vue') },
   { path: '/issues', component: () => import('./views/IssuesView.vue') },
-  { path: '/billing', component: () => import('./views/BillingView.vue')},
+  { path: '/sensors', component: () => import('./views/SensorsView.vue')},
+  { path: '/payments', component: () => import('./views/BillingView.vue')},
 ]
 
 const router = createRouter({

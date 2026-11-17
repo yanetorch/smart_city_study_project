@@ -18,4 +18,15 @@ export const auth = reactive({
   get isAuthenticated() {
     return !!this.token
   },
+
+  async loadUser() {
+    if (!this.token) return
+    try {
+      const { data } = await api.get('/auth/users/me')
+      this.user = data
+      localStorage.setItem('user', JSON.stringify(data))
+    } catch {
+      this.logout()
+    }
+  },
 })

@@ -19,6 +19,8 @@ services:
     environment:
       # в конфиге @localhost, а для докера @auth_db
       - DATABASE_URL=postgresql+asyncpg://admin:123@auth_db:5432/identifyandauth
+      - SERVICE_NAME=auth
+      - SERVICE_REGISTRATION_TOKEN=${SERVICE_REGISTRATION_TOKEN}
     depends_on:
       auth_db:
         condition: service_healthy
@@ -47,14 +49,20 @@ services:
       context: ./services/transport-service
     # ports:
     #   - "8002:8000" # без nginx
+    env_file:
+      - ./services/transport-service/config.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://admin:123@transport_db:5432/transport
+      - SERVICE_NAME=transport
       - AUTH_SERVICE_URL=http://auth_service:8000
       - NOTIFICATION_SERVICE_URL=http://notification_service:8000
       - ROOT_PATH=/api/transport
+      - SERVICE_REGISTRATION_TOKEN=${SERVICE_REGISTRATION_TOKEN}
     depends_on:
       transport_db:
         condition: service_healthy
+      auth_service:
+        condition: service_started
 
   transport_db:
     image: postgres:16-alpine
@@ -76,14 +84,20 @@ services:
       context: ./services/utility-service
     # ports:
     #   - "8003:8000" # без nginx
+    env_file:
+      - ./services/utility-service/config.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://admin:123@utility_db:5432/utility
+      - SERVICE_NAME=utility
       - AUTH_SERVICE_URL=http://auth_service:8000
       - NOTIFICATION_SERVICE_URL=http://notification_service:8000
       - ROOT_PATH=/api/utility
+      - SERVICE_REGISTRATION_TOKEN=${SERVICE_REGISTRATION_TOKEN}
     depends_on:
       utility_db:
         condition: service_healthy
+      auth_service:
+        condition: service_started
 
   utility_db:
     image: postgres:16-alpine
@@ -104,13 +118,16 @@ services:
   notification_service:
     build:
       context: ./services/notification-service
+    env_file:
+      - ./services/notification-service/config.env
     environment:
-      SERVICE_NAME: notification-service
-      DRY_RUN: "true"
-      AUTH_SERVICE_URL: http://auth_service:8000
-      SERVICE_API_KEY: 9unjXDAUDVI9uPp6GVyEGGmE2eLFo_6VdKVesoi3TWih6jfkPLN3Z9d73OAZnhU7
+      - SERVICE_NAME=notification
+      - AUTH_SERVICE_URL=http://auth_service:8000
+      - DRY_RUN=true
+      - SERVICE_REGISTRATION_TOKEN=${SERVICE_REGISTRATION_TOKEN}
     depends_on:
-      - auth_service
+      auth_service:
+        condition: service_started
     restart: unless-stopped
 
 
@@ -118,13 +135,19 @@ services:
   environment_service:
     build:
       context: ./services/environment-service
+    env_file:
+      - ./services/environment-service/config.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://admin:123@environment_db:5432/environment
       - SECRET_KEY=change-me
-      - SERVICE_NAME=environment-service
+      - SERVICE_NAME=environment
+      - SERVICE_REGISTRATION_TOKEN=${SERVICE_REGISTRATION_TOKEN}
+      - AUTH_SERVICE_URL=http://auth_service:8000
     depends_on:
       environment_db:
         condition: service_healthy
+      auth_service:
+        condition: service_started
 
   environment_db:
     image: postgres:16-alpine
@@ -144,14 +167,19 @@ services:
   billing_service:
     build:
       context: ./services/billing-service
+    env_file:
+      - ./services/billing-service/config.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://admin:123@billing_db:5432/billing
       - SECRET_KEY=change-me
-      - SERVICE_NAME=billing-service
-      - SERVICE_API_KEY=change-me
+      - SERVICE_NAME=billing
+      - SERVICE_REGISTRATION_TOKEN=${SERVICE_REGISTRATION_TOKEN}
+      - AUTH_SERVICE_URL=http://auth_service:8000
     depends_on:
       billing_db:
         condition: service_healthy
+      auth_service:
+          condition: service_started
 
   billing_db:
     image: postgres:16-alpine
@@ -186,6 +214,8 @@ services:
       - auth_service
       - transport_service
       - utility_service
+      - environment_service
+      - billing_service
       - frontend
 
 volumes:
