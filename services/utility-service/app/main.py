@@ -8,6 +8,7 @@ from sqlalchemy.exc import DBAPIError, IntegrityError
 from app.config import settings
 from app.database import engine, init_db
 from app.routers import issues
+from app.service_registration import register_self
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,6 +20,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)  # не спамить ка
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await register_self()
     await init_db()
     log.info("Utility service started")
     yield

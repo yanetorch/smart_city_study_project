@@ -7,7 +7,7 @@ from ..auth import get_current_user
 from pydantic import BaseModel
 from datetime import datetime
 
-router = APIRouter()
+router = APIRouter(prefix="/sensors", tags=["sensors"])
 
 class SensorDataCreate(BaseModel):
     sensor_id: int
@@ -18,18 +18,24 @@ class SensorCreate(BaseModel):
     location: str
     sensor_type: str = "temperature"
 
-@router.get("/sensors")
+class SensorOut(BaseModel):
+    sensod_id: int
+    name: str
+    location: str
+    sensor_type: str
+
+@router.get("", response_model=list[SensorOut])
 async def get_sensors(db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     result = await db.execute(select(Sensor))
     return result.scalars().all()
 
-@router.get("/sensors/{sensor_id}/data")
+@router.get("/{sensor_id}/data")
 async def get_sensor_data(sensor_id: int, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     result = await db.execute(select(SensorData).where(SensorData.sensor_id == sensor_id))
     return result.scalars().all()
 
 
-@router.post("/sensors", status_code=201)
+@router.post("", status_code=201)
 async def create_sensor(sensor: SensorCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     new_sensor = Sensor(
         name=sensor.name,
@@ -41,7 +47,7 @@ async def create_sensor(sensor: SensorCreate, db: AsyncSession = Depends(get_db)
     await db.refresh(new_sensor)
     return new_sensor
 
-@router.post("/sensors/data", status_code=201)
+@router.post("/data", status_code=201)
 async def post_sensor_data(data: SensorDataCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     # В реальном проекте здесь может быть проверка, что пользователь имеет право писать в этот датчик
     new_data = SensorData(sensor_id=data.sensor_id, value=data.value, timestamp=datetime.utcnow())

@@ -37,15 +37,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     return user
 
 async def verify_service_key(key: str = Depends(api_key_scheme), db: AsyncSession = Depends(get_db)) -> ServiceApiKey:
-    key_hash = hash_api_key(key)
-    result = await db.execute(select(ServiceApiKey).where(ServiceApiKey.key_hash == key_hash, ServiceApiKey.is_active.is_(True)))
+    result = await db.execute(select(ServiceApiKey).where(ServiceApiKey.key_hash == hash_api_key(key), ServiceApiKey.is_active.is_(True)))
     service_key = result.scalar_one_or_none()
 
     if service_key is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired API key",
-            headers={"WWW-Authenticate": "Bearer"}
+            detail="Invalid or expired API key"
         )
 
     return service_key

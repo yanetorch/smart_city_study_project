@@ -3,20 +3,19 @@ from fastapi import FastAPI
 from .database import engine, Base, AsyncSessionLocal
 from .routers import environment
 from .seed import seed
-
+from .service_registration import register_self
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Создаем все таблицы при запуске приложения
+    await register_self()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     async with AsyncSessionLocal() as session:
         await seed(session)
 
-    yield  # Приложение работает
+    yield
 
-    # Очищаем соединения при завершении
     await engine.dispose()
 
 

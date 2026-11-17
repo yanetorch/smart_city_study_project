@@ -31,3 +31,8 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+    
+class ServiceRegistrationRequest(BaseModel):
+    service_name: str = Field(min_length=1, max_length=50)
+    key_hash: str = Field(min_length=64, max_length=64) 

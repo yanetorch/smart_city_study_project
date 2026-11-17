@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     # Чтобы по user_id получить email/телефон — идём в auth-service
     AUTH_SERVICE_URL: str = "http://auth-service:8000"
     AUTH_TIMEOUT_SECONDS: float = 3.0
+    SERVICE_REGISTRATION_TOKEN: str = ""
 
     # ---- Поведение ----
     # Если True — не отправляем реально, только пишем в лог (удобно для тестов)

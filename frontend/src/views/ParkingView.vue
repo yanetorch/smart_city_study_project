@@ -45,12 +45,22 @@ async function submitReserve() {
   formError.value = ''
   submitting.value = true
   try {
+    const start = new Date(form.value.start_time)
+    const end = new Date(form.value.end_time)
+    const hours = Math.ceil((end - start) / (60 * 60 * 1000))
+
+    if (hours <= 0) {
+      formError.value = "Время окончания должно быть позже начала"
+      return
+    }
+
     await api.post(`/transport/parking/${reserving.value.id}/reserve`, {
       car_number: form.value.car_number,
-      start_time: new Date(form.value.start_time).toISOString(),
-      end_time: new Date(form.value.end_time).toISOString(),
+      start_time: start.toISOString(),
+      hours: hours,
     })
     reserving.value = null
+    await load()
   } catch (e) {
     formError.value = e.response?.data?.detail || e.message
   } finally {
@@ -82,7 +92,7 @@ onMounted(load)
           <td>{{ p.id }}</td>
           <td>{{ p.name }}</td>
           <td>{{ p.address }}</td>
-          <td>{{ p.total_spots }}</td>
+          <td>{{ p.free_spots }} / {{ p.total_spots }}</td>
           <td>{{ p.price_per_hour }} ₽</td>
           <td><button @click="openReserve(p)">Забронировать</button></td>
         </tr>

@@ -9,6 +9,7 @@ from app.config import settings
 from app.database import AsyncSessionLocal, engine, init_db
 from app.routers import parking, reservations, vehicles
 from app.seed import seed
+from app.service_registration import register_self
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,6 +21,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)  # не спамить ка
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await register_self()
     await init_db()
     async with AsyncSessionLocal() as session:
         await seed(session)
