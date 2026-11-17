@@ -142,6 +142,7 @@ services:
       - SECRET_KEY=change-me
       - SERVICE_NAME=environment
       - SERVICE_REGISTRATION_TOKEN=${SERVICE_REGISTRATION_TOKEN}
+      - AUTH_SERVICE_URL=http://auth_service:8000
     depends_on:
       environment_db:
         condition: service_healthy
@@ -173,6 +174,7 @@ services:
       - SECRET_KEY=change-me
       - SERVICE_NAME=billing
       - SERVICE_REGISTRATION_TOKEN=${SERVICE_REGISTRATION_TOKEN}
+      - AUTH_SERVICE_URL=http://auth_service:8000
     depends_on:
       billing_db:
         condition: service_healthy
@@ -212,6 +214,8 @@ services:
       - auth_service
       - transport_service
       - utility_service
+      - environment_service
+      - billing_service
       - frontend
 
 volumes:
